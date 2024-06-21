@@ -1,1 +1,5 @@
-TBD
+This repository contains support scripts developed for the completion of the thesis of Tessel Kaal. 
+
+These scripts cover various aspects of the thesis work, including data processing, analysis, and visualization.
+
+To get started, clone the repository to your local machine, and change the paths of the output and input files. 
