@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Define the folder path
-folderpath = r"C:\Users\tessel.kaal\OneDrive - Accenture\Thesis\Output training model\VERSION 5\VERSION 5.1\SCENARIO5\0620_100_40_Scenario5.3_new"
+folderpath = r"C:\Users\tessel.kaal\OneDrive - Accenture\Thesis\Output training model\VERSION 5\VERSION 5.1\0625_100_40_Scenario4.4"
 
 # Search for CSV files with "training" and "evaluation" in their names
 training_data_files = glob(os.path.join(folderpath, '*training_rewards*.csv'))

@@ -1,49 +1,59 @@
-import requests
 import os
+from glob import glob
+import pandas as pd
 
-# Your API key and headers
-api_key = 'eyJvcmciOiI1ZTU1NGUxOTI3NGE5NjAwMDEyYTNlYjEiLCJpZCI6IjMzOTAyNTJhZTc2NzRlZGZiY2Q5NjA4Y2ZlOTY4YTRhIiwiaCI6Im11cm11cjEyOCJ9'  # Replace with your actual API key
-headers = {'Authorization': f'Bearer {api_key}'}
+def calculate_seasonal_statistics(folderpath, folderpath_output):
+    # Search for CSV files with "evaluation" in their names
+    evaluation_data_files = glob(os.path.join(folderpath, '*output_rewards_evaluation*.csv'))
 
-# Variables for dataset, version
-dataset_name = 'zonneschijnduur_en_straling'  # Example dataset name
-version_id = '1.0'  # Example version ID
+    # Ensure that at least one evaluation CSV file is found
+    if len(evaluation_data_files) < 1:
+        raise FileNotFoundError("No evaluation CSV files found in the folder.")
 
-# Base URL for file download
-base_url = 'https://api.dataplatform.knmi.nl/open-data/v1/datasets/'
+    # Group files by season
+    evaluation_data_files.sort()
 
-# Local directory to save the files (change this to your local directory if necessary)
-local_directory = r'C:\Users\tessel.kaal\OneDrive - Accenture\Thesis\Thesis P4\Data\Solar\Solar dowloads'
+    # Extract seasons from filenames and group files by season
+    evaluation_groups = {}
 
-# Ensure the directory exists
-os.makedirs(local_directory, exist_ok=True)
+    for f in evaluation_data_files:
+        season = f.split('_')[-2]
+        if season not in evaluation_groups:
+            evaluation_groups[season] = []
+        evaluation_groups[season].append(f)
 
-for month in range(12,13):  # Loop through months 1 to 12
-    formatted_month = f'{month:02d}'
-    filename = f'kis_tos_2022{formatted_month}.gz'
-    url_file_download = f'{base_url}{dataset_name}/versions/{version_id}/files/{filename}/url'
+    # Calculate and output statistics for each season
+    for season, files in evaluation_groups.items():
+        evaluation_data_csv = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
 
-    # Making the API call to get the download URL
-    response_download = requests.get(url_file_download, headers=headers)
+        # Extract the second column (assuming it's the relevant data)
+        evaluation_rewards = evaluation_data_csv.iloc[:, 1]
 
-    if response_download.status_code == 200:
-        download_url_info = response_download.json()
-        download_url = download_url_info.get('temporaryDownloadUrl')
-        print('Downloading:', filename)
+        # Calculate statistics for evaluation data
+        mean_reward = evaluation_rewards.mean()
+        variance_reward = evaluation_rewards.var()
+        std_dev_reward = evaluation_rewards.std()
 
-        # Download the file
-        if download_url:
-            file_response = requests.get(download_url)
-            if file_response.status_code == 200:
-                file_path = os.path.join(local_directory, filename)
-                with open(file_path, 'wb') as file:
-                    file.write(file_response.content)
-                print(f'Successfully downloaded {filename} to {file_path}')
-            else:
-                print(f'Error downloading {filename}')
+        # Output the statistics
+        print(f"Season {season} - Mean Reward: {mean_reward}")
+        print(f"Season {season} - Variance of Reward: {variance_reward}")
+        print(f"Season {season} - Standard Deviation of Reward: {std_dev_reward}")
+
+        # Optionally save statistics to a file
+        output_stats_path = input(f"Enter the filename to save the statistics for season {season} (leave blank to skip saving): ")
+        if output_stats_path:
+            stats_output = os.path.join(folderpath_output, f"{output_stats_path}.txt")
+            with open(stats_output, 'w') as f:
+                f.write(f"Season {season} - Mean Reward: {mean_reward}\n")
+                f.write(f"Season {season} - Variance of Reward: {variance_reward}\n")
+                f.write(f"Season {season} - Standard Deviation of Reward: {std_dev_reward}\n")
+            print(f"Statistics saved as {stats_output}")
         else:
-            print(f'Download URL not found for {filename}')
-    else:
-        print(f'Error getting download URL for {filename}:', response_download.status_code, response_download.text)
+            print(f"No output path provided for season {season}. Statistics not saved.")
 
+# Define the folder paths
+folderpath = r"C:\Users\tessel.kaal\OneDrive - Accenture\Thesis\Output training model\VERSION 5\VERSION 5.1\SCENARIO5\0612_400_200_SCENARIO5.5.2_LONGRUN"
+folderpath_output = r"C:\Users\tessel.kaal\OneDrive - Accenture\Thesis\Output training model\Variability\Eval_only"
 
+# Call the function
+calculate_seasonal_statistics(folderpath, folderpath_output)
